@@ -1,3 +1,6 @@
+import plotly.colors as pc
+PLOTLY_DEFAULT_COLORS = pc.DEFAULT_PLOTLY_COLORS
+
 # Measurement metadata we keep for each input measurement ID, from the RIPE ATLAS API GET call
 KEEP_FIELDS = [
     'af',  # [4, 6] [Not for wifi] IPv4 of IPv6 Address family of the measurement
