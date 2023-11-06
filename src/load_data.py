@@ -137,7 +137,8 @@ def get_asns_column(row):
         if len(meas_asns) == 0:
             print(f'  {meas_id}: No ASNs found, continuing to the next measurement.')
         else:
-            print(f'  {meas_id}: Found ASNs {meas_asns}.')
+            # print(f'  {meas_id}: Found ASNs {meas_asns}.')
+            print(f'  {meas_id}: Found {len(meas_asns)} ASNs.')
 
     return meas_asns
 
@@ -261,7 +262,7 @@ def get_bias_df(meas_data_df):
         meas_bias_calculation_end = time.time() - meas_bias_calculation_start
         print(f"  {row['meas_id']}: Bias values calculated in {meas_bias_calculation_end:.3f} seconds.")
         bias_dfs.append(meas_bias_df)
-    # Combine all of the dataframes containing the bias values of each measurement into one
+    # Combine all the dataframes containing the bias values of each measurement into one
     all_meas_bias_df = pd.concat(bias_dfs)
     total_bias_calculation_end = time.time() - total_bias_calculation_start
     print(

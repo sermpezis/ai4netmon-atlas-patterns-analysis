@@ -63,20 +63,21 @@ def get_sample_bias_causes(input_meas_ids, asns_df):
     for meas_id in input_meas_ids:
         print(f'Processing measurement with id {meas_id}.')
         meas_asns = asns_df[asns_df['meas_id'] == meas_id].loc[:, 'asn'].tolist()
-        print(meas_asns)
+        # print(meas_asns)
         # Skip any measurement that has no ASNs in it
         if len(meas_asns) > 0:
             print(f"{meas_id}: Getting measurement's bias causes...")
             meas_bias_causes_start = time.time()
             meas_bias_causes = get_meas_bias_causes(meas_asns)
             meas_bias_causes_end = time.time() - meas_bias_causes_start
-            print(f'{meas_id}: Got bias causes: {meas_bias_causes}')
+            # print(f'{meas_id}: Got bias causes: {meas_bias_causes}')
+            print(f'{meas_id}: Got bias causes.')
             print(f'{meas_id}: Time to get bias causes: {meas_bias_causes_end:.3f}')
-            print(meas_bias_causes)
+
             all_bias_causes[f'{meas_id}'] = meas_bias_causes
         else:
             print(f'{meas_id}: This measurement contains no ASNs so it is skipped for the bias causes calculation.')
-        print('-' * 300)
+        print('-' * 100)
 
     return all_bias_causes
 
