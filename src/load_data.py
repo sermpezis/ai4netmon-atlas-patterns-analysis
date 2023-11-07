@@ -2,9 +2,9 @@ import requests
 import warnings
 import time
 import os
-import logging
 import pandas as pd
 from globals import KEEP_FIELDS, PROBES_DATA_CSV_NAME, BIAS_DIMENSIONS
+import agg_data_utils as adu
 # AI4NetMon project imports
 from project_files.data_aggregation_tools import load_aggregated_dataframe
 from project_files.map_probes import map_probes
@@ -361,6 +361,38 @@ def load_main(input_meas_ids):
         load_data_end = time.time() - load_data_start
         print(f"Data loading completed successfully in {load_data_end:.3f} seconds.")
         return df, probes_df, asns_df
+
+
+def string_to_txt(s, file_path):
+    with open(file_path, 'w') as f:
+        f.write(s)
+
+def export_all_asns(asns_df):
+    all_asns_filepath = '../data/all_asns.txt'
+    # Get list of all ASNs
+    all_asns = adu.get_all_asns(asns_df)
+    # Serialize into a string
+    all_asns_str = ','.join([str(asn) for asn in all_asns])
+    # Export the ASNs string to the specified file
+    string_to_txt(all_asns_str, all_asns_filepath)
+    print('All ASNs exported.')
+
+def export_asns_per_meas(asns_df):
+    # For each measurement ID in the input measurement IDs
+    for meas_id in asns_df['meas_id'].unique():
+        # Create the filename for the exported ASNs
+        meas_asns_filepath = f'../data/{meas_id}_asns.txt'
+        # Get current measurement's ASNs in a list
+        meas_asns = adu.get_meas_asns(meas_id, asns_df)
+        # If there are ASNs found
+        if len(meas_asns) > 0:
+            # Serialize the ASNs list into a string
+            meas_asns_str = ','.join([str(asn) for asn in meas_asns])
+        else:
+            meas_asns_str = 'No ASNs found for this measurement ID.'
+        # Export the ASNS string to the specified file
+        string_to_txt(meas_asns_str, meas_asns_filepath)
+        print(f"{meas_id}: Measurement's ASNS exported.")
 
 
 if __name__ == "__main__":

@@ -11,3 +11,5 @@ More specifically, we have developed a python notebook (`main.ipynb`) that allow
 4) The number of probes vs the average bias per measurement.
 5) The bias CDF across all bias dimensions.
 6) The top bias causes per measurement as well as for the entire input measurement set.
+
+In addition, we also print all the ASNs that appear in the input measurements, as well as the ASNs for each input measurement, so the user can use them in order to get further information about their measurement set through the [AI4NetMon Web App](https://app-ai4netmon.csd.auth.gr/).
