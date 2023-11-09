@@ -2,11 +2,14 @@ import requests
 import pandas as pd
 from globals import BIAS_DIMENSIONS, PLOTLY_DEFAULT_COLORS
 
+
 def get_all_asns(asns_df):
     return list(asns_df['asn'].unique())
 
+
 def get_meas_asns(meas_id, asns_df):
     return list(asns_df[asns_df['meas_id'] == meas_id].loc[:, 'asn'].unique())
+
 
 def prepare_probeid_asn_counts_data(df, col, normalize):
     # Convert probe_id or asn column to string

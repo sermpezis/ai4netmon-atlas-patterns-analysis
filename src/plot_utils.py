@@ -35,9 +35,9 @@ def get_probes_asns_counts_traces(probes_df, asns_df, top_x_lines=100, normalize
         - top_x_lines (int): Top X most frequent probe IDs and ASNs to show. Default value is 100.
         - normalize (bool): Specifies if we want counts or frequencies in our plots (False for counts, True for frequencies). Defaults to counts.
     Output:
-        - bar_traces (list[dict]): Contains a the data and the title of each bar trace we plot.
+        - bar_traces (list[dict]): Contains the data and the title of each bar trace we plot.
 
-    This function prepares the data for the "Top most frequenct probes and ASNs. For each of them it creates bar traces and their corresponding titles for two different cases: All probes/ASNs and the top top_x_lines probes and ASNs.
+    This function prepares the data for the top most frequent probes and ASNs. For each of them it creates bar traces and their corresponding titles for two different cases: All probes/ASNs and the top top_x_lines probes and ASNs.
     """
     if normalize:
         count_data_type = 'frequencies'
@@ -54,7 +54,9 @@ def get_probes_asns_counts_traces(probes_df, asns_df, top_x_lines=100, normalize
         lines = [all_lines, top_x_lines]
         for show_lines in lines:
             # Get the plot trace
-            bar_trace = get_bar_trace(bar_data.iloc[:show_lines, 0], bar_data.iloc[:show_lines, 1])
+            x_vals = bar_data.iloc[:show_lines, 0].values
+            y_vals = bar_data.iloc[:show_lines, 1].values
+            bar_trace = get_bar_trace(x_vals, y_vals)
             # Trace title
             if show_lines == all_lines:
                 title = f'{col} ' + count_data_type
@@ -83,16 +85,16 @@ def get_probes_asns_counts_fig(bar_traces):
                         subplot_titles=[d['title'] for d in reordered_bar_traces])
 
     # Traces are appened into the figure in the same order as reordered_bar_traces
-    fig.append_trace(bar_traces[0]['trace'], row=1, col=1)
-    fig.append_trace(bar_traces[2]['trace'], row=1, col=2)
-    fig.append_trace(bar_traces[1]['trace'], row=2, col=1)
-    fig.append_trace(bar_traces[3]['trace'], row=2, col=2)
+    fig.add_trace(bar_traces[0]['trace'], row=1, col=1)
+    fig.add_trace(bar_traces[2]['trace'], row=1, col=2)
+    fig.add_trace(bar_traces[1]['trace'], row=2, col=1)
+    fig.add_trace(bar_traces[3]['trace'], row=2, col=2)
 
     fig.update_traces(marker_color=PLOTLY_DEFAULT_COLORS[2])
-    fig.update_xaxes(visible=False, row=1, col=1)
-    fig.update_xaxes(visible=False, row=1, col=2)
-    fig.update_xaxes(visible=False, row=2, col=1)
-    fig.update_xaxes(visible=False, row=2, col=2)
+    fig.update_xaxes(visible=False, type='category', row=1, col=1)
+    fig.update_xaxes(visible=False, type='category', row=1, col=2)
+    fig.update_xaxes(visible=False, type='category', row=2, col=1)
+    fig.update_xaxes(visible=False, type='category', row=2, col=2)
 
     # Update the layout
     fig.update_layout(
@@ -107,12 +109,15 @@ def get_num_probes_asns_per_meas_traces(df):
     trace_config_dict = {
         'orientation': 'h'
     }
-    num_probes_per_meas_trace = get_bar_trace(df['num_probes'], df.index.astype(str), trace_config_dict = trace_config_dict)
+    x_vals = df['num_probes'].values
+    y_vals = list(df.index.astype(str))
+    num_probes_per_meas_trace = get_bar_trace(x_vals, y_vals, trace_config_dict = trace_config_dict)
     num_probes_per_meas_trace_dict = {
         'trace': num_probes_per_meas_trace,
         'title': 'Number of probes per measurement'
     }
-    num_asns_per_meas_trace = get_bar_trace(df['num_asns'], df.index.astype(str), trace_config_dict = trace_config_dict)
+    x_vals = df['num_asns'].values
+    num_asns_per_meas_trace = get_bar_trace(x_vals, y_vals, trace_config_dict = trace_config_dict)
     num_asns_per_meas_trace_dict = {
         'trace': num_asns_per_meas_trace,
         'title': 'Number of ASNs per measurement'
@@ -134,7 +139,9 @@ def get_num_probes_asns_per_meas_fig(num_probes_asns_per_meas_traces):
     )
 
     fig.add_trace(num_probes_asns_per_meas_traces[0]['trace'], row = 1, col = 1)
+    fig.update_yaxes(type = 'category', row = 1, col = 1)
     fig.add_trace(num_probes_asns_per_meas_traces[1]['trace'], row = 1, col = 2)
+    fig.update_yaxes(type='category', row=1, col=2)
 
     fig.update_layout(
         width = 1000,

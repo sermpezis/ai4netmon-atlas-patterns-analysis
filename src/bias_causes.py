@@ -191,6 +191,7 @@ def get_bias_causes_data(meas_bias_causes_dict):
 
 
 def bias_causes_main(input_meas_ids, asns_df, k = 5):
+    bias_causes_start = time.time()
     # Get bias causes for all input measurements
     all_bias_causes = get_sample_bias_causes(input_meas_ids, asns_df)
 
@@ -204,5 +205,8 @@ def bias_causes_main(input_meas_ids, asns_df, k = 5):
     topk_meas_bias_causes['total'] = top_agg_df
 
     bias_causes_pivot_df = get_bias_causes_data(topk_meas_bias_causes)
+
+    bias_causes_end = time.time() - bias_causes_start
+    print(f'Bias causes calculation completed in {bias_causes_end:.3f} seconds.')
 
     return bias_causes_df, bias_causes_pivot_df

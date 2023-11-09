@@ -367,6 +367,7 @@ def string_to_txt(s, file_path):
     with open(file_path, 'w') as f:
         f.write(s)
 
+
 def export_all_asns(asns_df):
     all_asns_filepath = '../data/all_asns.txt'
     # Get list of all ASNs
@@ -376,6 +377,7 @@ def export_all_asns(asns_df):
     # Export the ASNs string to the specified file
     string_to_txt(all_asns_str, all_asns_filepath)
     print('All ASNs exported.')
+
 
 def export_asns_per_meas(asns_df):
     # For each measurement ID in the input measurement IDs
