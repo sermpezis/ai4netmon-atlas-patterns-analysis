@@ -411,7 +411,7 @@ def get_bias_causes_heatmap_fig(bias_causes_trace):
         xaxis=dict(type='category'),
         xaxis_title = 'Number of probes in sample',
         yaxis_title = 'Bias Dimensions:Bin',
-        title_text="Bias causes for samples with different numbers of probes",
+        title_text="Bias causes for each measurement and all measurements",
         width = 1000,
         height = 500
     )
