@@ -150,5 +150,7 @@ bias_causes_heatmap_fig = pu.get_bias_causes_heatmap_fig(bias_causes_heatmap_tra
 st.plotly_chart(bias_causes_heatmap_fig)
 
 
-
+"""
+Add text for logging in the adu.get_bias_analysis_data() function
+"""
 
