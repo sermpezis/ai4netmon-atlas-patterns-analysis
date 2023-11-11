@@ -20,8 +20,9 @@ warnings.filterwarnings("ignore", category=RuntimeWarning, message="divide by ze
 # Contains data for each probe. Used to find the ASNs based on the probes of each measurement
 if os.path.isfile(PROBES_DATA_CSV_NAME):
     PROBES_DF = pd.read_csv(PROBES_DATA_CSV_NAME)
+    print('PROBES_DF loaded successfully.')
 else:
-    print('probes_data.csv does not exist in the /data/ directory.')
+    raise FileNotFoundError('probes_data.csv does not exist in the /data/ directory.')
 
 # Get df containing info for each AS
 print('Loading aggregated dataframe for ASNs...')

@@ -190,7 +190,10 @@ def get_bias_causes_data(meas_bias_causes_dict):
     return bias_causes_pivot
 
 
-def bias_causes_main(input_meas_ids, asns_df, k = 5):
+def get_bias_causes(input_meas_ids, asns_df):
+    """
+    This function gets all the bias causes for all measurement IDs in input_meas_ids
+    """
     bias_causes_start = time.time()
     # Get bias causes for all input measurements
     all_bias_causes = get_sample_bias_causes(input_meas_ids, asns_df)
@@ -198,15 +201,33 @@ def bias_causes_main(input_meas_ids, asns_df, k = 5):
     # Create bias causes df
     bias_causes_df = get_bias_df(all_bias_causes)
 
-    # Get top k bias causes for each input measurement
-    topk_meas_bias_causes = get_meas_topk_causes(input_meas_ids, bias_causes_df, k=k)
-    # Get top k aggregated bias causes from the entire set if input measurements
-    top_agg_df = get_topk_agg_bias_causes(bias_causes_df, k=5)
-    topk_meas_bias_causes['total'] = top_agg_df
-
-    bias_causes_pivot_df = get_bias_causes_data(topk_meas_bias_causes)
-
     bias_causes_end = time.time() - bias_causes_start
     print(f'Bias causes calculation completed in {bias_causes_end:.3f} seconds.')
+    return bias_causes_df
+
+
+def get_dashboard_bias_causes_data(input_meas_ids, bias_causes_df, k):
+    """
+    This function keeps the top k positive and top k negative largest bias causes for each measurement ID in
+    input_meas_ids, as well as for the entire set of input measurement IDs, and returns a pivot table that contains all
+    that information.
+    """
+    # Get top k bias causes for each input measurement
+    topk_meas_bias_causes_df = get_meas_topk_causes(input_meas_ids, bias_causes_df, k=k)
+    # Get top k aggregated bias causes from the entire set if input measurements
+    top_agg_df = get_topk_agg_bias_causes(bias_causes_df, k=k)
+    topk_meas_bias_causes_df['total'] = top_agg_df
+
+    bias_causes_pivot_df = get_bias_causes_data(topk_meas_bias_causes_df)
+    return bias_causes_pivot_df
+
+
+def bias_causes_main(input_meas_ids, asns_df, k = 5):
+    # Create bias causes df
+    bias_causes_df = get_bias_causes(input_meas_ids, asns_df)
+
+    # Get top k positive and negative bias causes for each measurement as well as for all measurements
+    bias_causes_pivot_df = get_dashboard_bias_causes_data(input_meas_ids, bias_causes_df, k)
+
 
     return bias_causes_df, bias_causes_pivot_df

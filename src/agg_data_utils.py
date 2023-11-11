@@ -1,3 +1,4 @@
+import time
 import requests
 import pandas as pd
 from globals import BIAS_DIMENSIONS, PLOTLY_DEFAULT_COLORS
@@ -19,7 +20,7 @@ def prepare_probeid_asn_counts_data(df, col, normalize):
     return bar_plot_data_df
 
 
-def get_avg_num_probes(df):
+def get_med_num_probes(df):
     return int(round(df['num_probes'].median(), 0))
 
 
@@ -57,12 +58,23 @@ def unpack_avg_bias_data(avg_bias_data):
 
 
 def get_bias_analysis_data(df):
-    # Average number of probes in input measurements
-    N = get_avg_num_probes(df)
+    bias_anal_data_start = time.time()
+    # Median number of probes in input measurements
+    N = get_med_num_probes(df)
 
     # Get the average bias per dimension for the set of random probes and our input measurements (sample)
+
+    print(f"Getting average bias per dimension for a random sample of {N} RIPE Atlas probes...")
+    rand_probe_start = time.time()
     rand_avg_bias_per_dim = get_rand_avg_bias_per_dim(N)
+    rand_probe_end = time.time() - rand_probe_start
+    print(f"Data retrieved in {rand_probe_end:.3f} seconds.")
+
+    print(f"Getting average bias per dimension for input measurements...")
+    meas_bias_start = time.time()
     sample_avg_bias_per_dim = get_sample_avg_bias_per_dim(df)
+    meas_bias_end = time.time() - meas_bias_start
+    print(f"Data retrieved in {meas_bias_end:.3f} seconds.")
 
     # Data related to the plot of the average bias per dimension
     avg_bias_per_dim_data = {
@@ -91,6 +103,9 @@ def get_bias_analysis_data(df):
             'color': PLOTLY_DEFAULT_COLORS[1]
         }
     }
+
+    bias_anal_data_end = time.time() - bias_anal_data_start
+    print(f"Bias analysis data completed in {bias_anal_data_end:.3f} seconds.")
     return avg_bias_per_dim_data, avg_bias_data
 
 

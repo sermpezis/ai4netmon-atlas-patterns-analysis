@@ -98,8 +98,36 @@ def get_probes_asns_counts_fig(bar_traces):
 
     # Update the layout
     fig.update_layout(
-        width=1200,
+        width=1000,
         height=700
+    )
+
+    return fig
+
+
+def get_subset_probes_asns_counts_fig(bar_traces):
+    # Create subplots with the specified grid layout
+    rows = 2
+    cols = 1
+    reordered_bar_traces = [
+        bar_traces[1],  # Top top_x_lines most frequent probe IDs' counts
+        bar_traces[3]  # Top top_x_lines most frequent ASNs' counts
+    ]
+    fig = make_subplots(rows=rows, cols=cols,
+                        subplot_titles=[d['title'] for d in reordered_bar_traces])
+
+    # Traces are appended into the figure in the same order as reordered_bar_traces
+    fig.add_trace(bar_traces[1]['trace'], row=1, col=1)
+    fig.add_trace(bar_traces[3]['trace'], row=2, col=1)
+
+    fig.update_traces(marker_color=PLOTLY_DEFAULT_COLORS[2])
+    fig.update_xaxes(visible=False, type='category', row=1, col=1)
+    fig.update_xaxes(visible=False, type='category', row=2, col=1)
+
+    # Update the layout
+    fig.update_layout(
+        width=500,
+        height=600
     )
 
     return fig
@@ -151,6 +179,7 @@ def get_num_probes_asns_per_meas_fig(num_probes_asns_per_meas_traces):
     return fig
 
 
+
 def get_radar_trace(data, name, color):
     r = list(data.values)
     r = [*r, r[0]]
@@ -192,7 +221,7 @@ def get_average_bias_per_sample_fig(average_bias_per_sample_trace):
         xaxis_title="Sample",
         yaxis_title="Average Bias",
         height=500,
-        width=600
+        width=400
     )
 
     return fig
@@ -209,7 +238,7 @@ def get_avg_bias_per_dim_radar_fig(radar_traces):
     theta_labels = [x.replace(' (', '<br>(') for x in [*theta, theta[0]]]
 
     fig.update_layout(
-        height=500,
+        height=550,
         width=700,
         title=f'Average Bias Distribution for Measurements and Random sample',
         font={
@@ -225,8 +254,15 @@ def get_avg_bias_per_dim_radar_fig(radar_traces):
                 'ticktext': theta_labels
             }
         },
-
     )
+
+    fig.update_layout(legend=dict(
+        orientation="h",  # Option for horizontal legend
+        yanchor="top",
+        y=1.1,
+        xanchor="right",
+        x=0.9
+    ))
 
     return fig
 
