@@ -71,7 +71,47 @@ def get_probes_asns_counts_traces(probes_df, asns_df, top_x_lines=100, normalize
     return bar_traces
 
 
-def get_probes_asns_counts_fig(bar_traces):
+def get_probes_asns_bar_trace(dfp, col, normalize, show_lines):
+    if normalize:
+        count_data_type = 'frequencies'
+    else:
+        count_data_type = 'counts'
+
+    all_lines = dfp[col].unique().shape[0]
+    title = f'{col} ' + count_data_type + f' (showing top {show_lines}/{all_lines})'
+
+    bar_data = adu.prepare_probeid_asn_counts_data(dfp, col, normalize)
+    x_vals = bar_data.iloc[:show_lines, 0].values
+    y_vals = bar_data.iloc[:show_lines, 1].values
+    bar_trace = get_bar_trace(x_vals, y_vals)
+    bar_trace_dict = {
+        'title': title,
+        'trace': bar_trace
+    }
+    return bar_trace_dict
+
+
+def get_bar_fig(bar_trace):
+    fig = go.Figure(bar_trace['trace'])
+
+    # Update the layout
+    fig.update_layout(
+        width=500,
+        height=400,
+        title=bar_trace['title'],
+        xaxis_title="Sample",
+        yaxis_title="Average Bias",
+    )
+
+    fig.update_xaxes(
+        visible = False,
+        type = 'category'
+)
+
+    return fig
+
+
+def get_probes_asns_counts_subplots_fig(bar_traces):
     # Create subplots with the specified grid layout
     rows = 2
     cols = 2
