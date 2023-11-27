@@ -16,7 +16,7 @@ def prepare_probeid_asn_counts_data(df, col, normalize):
     # Convert probe_id or asn column to string
     df[col] = df[col].astype(str)
     # Get the number each probe id or asn appears
-    bar_plot_data_df = df[col].value_counts(normalize=normalize).reset_index()
+    bar_plot_data_df = df[col].value_counts(normalize=normalize).sort_values(ascending=True).reset_index()
     return bar_plot_data_df
 
 

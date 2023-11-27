@@ -71,7 +71,8 @@ def get_probes_asns_counts_traces(probes_df, asns_df, top_x_lines=100, normalize
     return bar_traces
 
 
-def get_probes_asns_bar_trace(dfp, col, normalize, show_lines):
+def get_probes_asns_bar_trace(dfp, col, normalize_option, show_lines):
+    normalize = False if normalize_option == "Counts" else True
     if normalize:
         count_data_type = 'frequencies'
     else:
@@ -83,27 +84,30 @@ def get_probes_asns_bar_trace(dfp, col, normalize, show_lines):
     bar_data = adu.prepare_probeid_asn_counts_data(dfp, col, normalize)
     x_vals = bar_data.iloc[:show_lines, 0].values
     y_vals = bar_data.iloc[:show_lines, 1].values
-    bar_trace = get_bar_trace(x_vals, y_vals)
+    trace_config_dict = {
+        'orientation': 'h'
+    }
+    bar_trace = get_bar_trace(y_vals, x_vals, trace_config_dict=trace_config_dict)
     bar_trace_dict = {
         'title': title,
         'trace': bar_trace
     }
-    return bar_trace_dict
+    return bar_trace_dict, bar_data.sort_values(by=bar_data.columns[1], ascending=False).reset_index(drop = True)
 
 
-def get_bar_fig(bar_trace):
+def get_bar_fig(bar_trace, fig_config_dict = {}):
     fig = go.Figure(bar_trace['trace'])
 
     # Update the layout
     fig.update_layout(
         width=500,
-        height=400,
+        height=fig_config_dict.get("height", 500),
         title=bar_trace['title'],
-        xaxis_title="Sample",
-        yaxis_title="Average Bias",
+        xaxis_title=fig_config_dict.get("x_axis_title", ""),
+        # yaxis_title="Average Bias",
     )
 
-    fig.update_xaxes(
+    fig.update_yaxes(
         visible = False,
         type = 'category'
 )
@@ -217,7 +221,6 @@ def get_num_probes_asns_per_meas_fig(num_probes_asns_per_meas_traces):
     )
 
     return fig
-
 
 
 def get_radar_trace(data, name, color):
@@ -354,7 +357,11 @@ def get_avg_bias_per_dim_bar_fig(bar_traces):
         xaxis_title='Avg Bias',
         yaxis_title='Dimension',
         height=700,
-        width=600
+        width=600,
+        yaxis=dict(
+            categoryorder='array',
+            categoryarray=[BIAS_DIMENSIONS[i] for i in range(len(BIAS_DIMENSIONS) - 1, -1, -1)]
+        )
     )
 
     return fig
@@ -364,7 +371,11 @@ def get_scatter_trace(scatter_data, x_col, y_col):
     scatter_trace = go.Scatter(
         x = scatter_data[x_col],
         y = scatter_data[y_col],
-        text = scatter_data['hovertext']
+        text = scatter_data['hovertext'],
+        mode='markers',
+        marker=dict(
+            size=40
+        ),
     )
     return scatter_trace
 
@@ -492,7 +503,7 @@ def get_bias_causes_heatmap_fig(bias_causes_trace):
         xaxis_showgrid = True,
         yaxis_showgrid = False,
         xaxis=dict(type='category'),
-        xaxis_title = 'Number of probes in sample',
+        xaxis_title = 'Sample',
         yaxis_title = 'Bias Dimensions:Bin',
         title_text="Bias causes for each measurement and all measurements",
         width = 1000,

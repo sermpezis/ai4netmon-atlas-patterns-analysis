@@ -7,6 +7,7 @@ import agg_data_utils as adu
 import plot_utils as pu
 import bias_causes as bc
 
+
 # Table of Contents class
 class Toc:
 
@@ -36,6 +37,7 @@ class Toc:
 
         st.markdown(f"<{level} id='{key}'>{text}</{level}>", unsafe_allow_html=True)
         self._items.append(f"{space}* <a href='#{key}'>{text}</a>")
+
 
 def collect_numbers(s):
     return [int(i) for i in re.split("[^0-9]", s) if i != ""]
@@ -141,29 +143,73 @@ normalize_option = st.radio(
     ":chart_with_upwards_trend: Select type of data you want to see",
     ["Counts", "Frequencies"]
 )
-normalize = False if normalize_option == "Counts" else True
 
-# How many of the top most frequent probes to show. Defaults to all
-max_probes = probes_df['probe_id'].unique().shape[0]
-probes_show_lines = st.slider(
-    ":level_slider: Please select the top most frequent probes you want to see",
-    1, min(100, max_probes), max_probes
-)
-# Plot probes counts bar plot
-probes_bar_trace_data_dict = pu.get_probes_asns_bar_trace(probes_df, 'probe_id', normalize, probes_show_lines)
-probes_bar_plot_fig = pu.get_bar_fig(probes_bar_trace_data_dict)
-st.plotly_chart(probes_bar_plot_fig, use_container_width=True)
+data_type = "count" if normalize_option == "Counts" else "frequency"
 
-# How many of the top most frequent probes to show. Defaults to all
-max_asns = asns_df['asn'].unique().shape[0]
-asns_show_lines = st.slider(
-    ":level_slider: Please select the top most frequent ASNs you want to see",
-    1, min(100, max_asns), max_asns
-)
-# Plot ASNs counts bar plot
-asns_bar_trace_data_dict = pu.get_probes_asns_bar_trace(asns_df, 'asn', normalize, asns_show_lines)
-asns_bar_plot_fig = pu.get_bar_fig(asns_bar_trace_data_dict)
-st.plotly_chart(asns_bar_plot_fig, use_container_width=True)
+fig_config_dict = {
+    'x_axis_title': normalize_option,
+    # 'height': 700
+}
+
+# Probes --------------------------------------------------
+col1, col2 = st.columns([0.7, 0.3])
+with col1:
+    st.subheader(f"Probe ID {normalize_option.lower()} sorted by {data_type}")
+    # How many of the top most frequent probes to show. Defaults to all
+    max_probes = probes_df['probe_id'].unique().shape[0]
+    probes_show_lines = st.slider(
+        ":level_slider: Please select the top most frequent probes you want to see",
+        1, min(100, max_probes), max_probes
+    )
+
+    # Plot probes counts bar plot
+    probes_bar_trace_data_dict, probes_bar_data_df = pu.get_probes_asns_bar_trace(
+        probes_df, 'probe_id', normalize_option, probes_show_lines
+    )
+    probes_bar_plot_fig = pu.get_bar_fig(probes_bar_trace_data_dict, fig_config_dict)
+    st.plotly_chart(probes_bar_plot_fig, use_container_width=True)
+with col2:
+    st.subheader(f"Probe ID {normalize_option.lower()} data")
+    st.dataframe(probes_bar_data_df, use_container_width=True, hide_index=True)
+    # Option to download data
+    csv = convert_df_to_csv(probes_bar_data_df)
+    st.download_button(
+        ":arrow_heading_down: Download data as .csv",
+        csv,
+        f"probe_id_{normalize_option.lower()}.csv",
+        "text/csv",
+        key='download-probes-csv'
+    )
+
+# ASNs -----------------------------------------------------
+col1, col2 = st.columns([0.7, 0.3])
+with col1:
+    st.subheader(f"ASN {normalize_option.lower()} sorted by {data_type}")
+    # How many of the top most frequent probes to show. Defaults to all
+    max_asns = asns_df['asn'].unique().shape[0]
+    asns_show_lines = st.slider(
+        ":level_slider: Please select the top most frequent ASNs you want to see",
+        1, min(100, max_asns), max_asns
+    )
+
+    # Plot ASNs counts bar plot
+    asns_bar_trace_data_dict, asns_bar_data_df = pu.get_probes_asns_bar_trace(
+        asns_df, 'asn', normalize_option, asns_show_lines
+    )
+    asns_bar_plot_fig = pu.get_bar_fig(asns_bar_trace_data_dict, fig_config_dict)
+    st.plotly_chart(asns_bar_plot_fig, use_container_width=True)
+with col2:
+    st.subheader(f"ASN {normalize_option.lower()} data")
+    st.dataframe(asns_bar_data_df, use_container_width=True)
+    # Option to download data
+    csv = convert_df_to_csv(asns_bar_data_df)
+    st.download_button(
+        ":arrow_heading_down: Download data as .csv",
+        csv,
+        f"probe_id_{normalize_option.lower()}.csv",
+        "text/csv",
+        key='download-asns-csv'
+    )
 
 # ----------------------------------------------------------------------------------------------------------------------
 toc.subheader("Number of probes and ASNs used per measurement")
@@ -309,7 +355,7 @@ with st.expander(":eyes: Measurements' metadata and bias dataframe"):
 
     csv = convert_df_to_csv(df)
     st.download_button(
-        "Download data as .csv",
+        ":arrow_heading_down: Download data as .csv",
         csv,
         "measuremet_data.csv",
         "text/csv",
