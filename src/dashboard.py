@@ -7,6 +7,8 @@ import agg_data_utils as adu
 import plot_utils as pu
 import bias_causes as bc
 
+CACHE_TTL = 1200
+
 
 # Table of Contents class
 class Toc:
@@ -43,26 +45,32 @@ def collect_numbers(s):
     return [int(i) for i in re.split("[^0-9]", s) if i != ""]
 
 
-@st.cache_data(ttl=300, show_spinner='Loading data...')
+@st.cache_data(ttl=CACHE_TTL, max_entries = 5, show_spinner='Loading data...')
 def st_load_main(input_meas_ids):
     df, probes_df, asns_df = ld.load_main(input_meas_ids)
     return df, probes_df, asns_df
 
 
-@st.cache_data(ttl=300, show_spinner='Preparing bias comparison data...')
+@st.cache_data(ttl=CACHE_TTL, max_entries = 5, show_spinner='Preparing bias comparison data...')
 def st_get_bias_analysis_data(df):
     avg_bias_per_dim_data, avg_bias_data = adu.get_bias_analysis_data(df)
     return avg_bias_per_dim_data, avg_bias_data
 
 
-@st.cache_data(ttl=300, show_spinner='Getting bias causes...')
+@st.cache_data(ttl=CACHE_TTL, max_entries = 5, show_spinner='Preparing bias comparison data...')
+def st_get_meas_bias_per_dim_data(df):
+    meas_bias_per_dim_data_dict = adu.get_meas_bias_per_dim_data(df)
+    return meas_bias_per_dim_data_dict
+
+
+@st.cache_data(ttl=CACHE_TTL, max_entries = 5, show_spinner='Getting bias causes...')
 def st_get_bias_causes(input_meas_ids, asns_df):
     bias_causes_df = bc.get_bias_causes(input_meas_ids, asns_df)
     return bias_causes_df
 
 
 def convert_df_to_csv(df):
-   return df.to_csv(index=True).encode('utf-8')
+    return df.to_csv(index=True).encode('utf-8')
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -166,7 +174,8 @@ with col1:
     probes_bar_trace_data_dict, probes_bar_data_df = pu.get_probes_asns_bar_trace(
         probes_df, 'probe_id', normalize_option, probes_show_lines
     )
-    probes_bar_plot_fig = pu.get_bar_fig(probes_bar_trace_data_dict, fig_config_dict)
+    fig_config_dict['y_axis_title'] = 'Probe IDs'
+    probes_bar_plot_fig = pu.get_bar_fig(probes_bar_trace_data_dict, fig_config_dict = fig_config_dict)
     st.plotly_chart(probes_bar_plot_fig, use_container_width=True)
 with col2:
     st.subheader(f"Probe ID {normalize_option.lower()} data")
@@ -196,11 +205,12 @@ with col1:
     asns_bar_trace_data_dict, asns_bar_data_df = pu.get_probes_asns_bar_trace(
         asns_df, 'asn', normalize_option, asns_show_lines
     )
-    asns_bar_plot_fig = pu.get_bar_fig(asns_bar_trace_data_dict, fig_config_dict)
+    fig_config_dict['y_axis_title'] = 'ASNs'
+    asns_bar_plot_fig = pu.get_bar_fig(asns_bar_trace_data_dict, fig_config_dict = fig_config_dict)
     st.plotly_chart(asns_bar_plot_fig, use_container_width=True)
 with col2:
     st.subheader(f"ASN {normalize_option.lower()} data")
-    st.dataframe(asns_bar_data_df, use_container_width=True)
+    st.dataframe(asns_bar_data_df, use_container_width=True, hide_index=True)
     # Option to download data
     csv = convert_df_to_csv(asns_bar_data_df)
     st.download_button(
@@ -232,23 +242,29 @@ toc.title("Bias analysis of measurements")
 # ----------------------------------------------------------------------------------------------------------------------
 toc.subheader("Bias comparison: Measurements (average) vs random sample of probes")
 
-# Here we first find the average number of probes $\hat{N}$ from all input measurements and then compare the average bias value of our input measurements with the average bias of a set of $\hat{N}$ randomly selected probes.
 st.markdown(
     """
     :point_right: In this section you can see information about the average bias distribution for each bias dimension as well as a comparison
-    between the average bias of your measurements and a sample of randomly selected probes.
+    between the average bias of your measurements, a sample of randomly selected probes and if you wish, individual measurements.
     
     :information_source: To get the random probes sample, first the median number of probes $\hat{N}$ from all your measurements is 
     calculated, then a random sample of $\hat{N}$ probes is created and finally it is compared to your measurements.
     
-    :point_right: You can also choose how you want to visualize the average bias distributions: via a radar plot or a bar plot.
+    :point_right: You can also choose how you want to visualize the average bias distributions: via a radar plot or a 
+    bar plot. If you select the radar plot, you can also select an individual measurement and compare its bias values
+    with the average bias of all the other input measurements as well as the random sample of $\hat{N}$ measurments.
     """
 )
 
 # Get data for the bias analysis plots
 avg_bias_per_dim_data, avg_bias_data = st_get_bias_analysis_data(df)
-meas_avg_bias = avg_bias_data['Measurements']['data']
-rand_avg_bias = avg_bias_data['Random']['data']
+# Get bias per bias dimension data for each input measurement
+meas_bias_per_dim_data_dict = st_get_meas_bias_per_dim_data(df)
+
+# add new function here that creates the bias data per measurement
+# merge the dict of the new function with avg_bias_per_dim_data
+# meas_avg_bias = avg_bias_data['Measurements']['data']
+# rand_avg_bias = avg_bias_data['Random']['data']
 
 
 col1, col2 = st.columns([0.3, 0.7])
@@ -267,15 +283,23 @@ with col1:
     )
 with col2:
     # Radar plot
+    # Contains the traces for the average bias per dim for all the measurements combined and the random sample
     avg_bias_per_dim_radar_traces = pu.get_radar_traces(avg_bias_per_dim_data)
-    avg_bias_per_dim_radar_fig = pu.get_avg_bias_per_dim_radar_fig(avg_bias_per_dim_radar_traces)
+    # Contains the traces for the bias per dimension for each measurement
+    meas_bias_per_dim_radar_traces = pu.get_radar_traces(meas_bias_per_dim_data_dict)
+    bias_per_dim_fig_dict = pu.get_all_bias_per_dim_figs(avg_bias_per_dim_radar_traces, meas_bias_per_dim_radar_traces)
+
     # Avg bias per dimension grouped bar plot
     avg_bias_per_dim_bar_traces = pu.get_avg_bias_per_dim_bar_traces(avg_bias_per_dim_data)
     avg_bias_per_dim_bar_fig = pu.get_avg_bias_per_dim_bar_fig(avg_bias_per_dim_bar_traces)
 
     tab1, tab2 = st.tabs(["Radar plot", "Bar plot"])
     with tab1:
-        st.plotly_chart(avg_bias_per_dim_radar_fig, use_container_width=True)
+        plot_selection = st.selectbox(
+            'Please select a measurement',
+            list(bias_per_dim_fig_dict.keys()),
+        )
+        st.plotly_chart(bias_per_dim_fig_dict[plot_selection], use_container_width=True)
     with tab2:
         st.plotly_chart(avg_bias_per_dim_bar_fig, use_container_width=True)
 
@@ -290,7 +314,11 @@ st.markdown(
 
 # Get and plot number of probes vs avg bias per measurement data
 scatter_data = adu.get_num_probes_avg_bias_meas_scatter_df(df)
-scatter_trace = pu.get_scatter_trace(scatter_data, 'num_probes', 'avg_meas_bias')
+trace_config_dict = {
+    'x_val_name': "Number of probes",
+    'y_val_name': "Avg Bias"
+}
+scatter_trace = pu.get_scatter_trace(scatter_data, 'num_probes', 'avg_meas_bias', trace_config_dict = trace_config_dict)
 num_probes_avg_bias_meas_fig = pu.get_num_probes_avg_bias_meas_fig(scatter_trace)
 st.plotly_chart(num_probes_avg_bias_meas_fig, use_container_width=True)
 
@@ -315,7 +343,13 @@ k = st.slider(
 bias_causes_pivot_df = bc.get_dashboard_bias_causes_data(input_meas_ids, bias_causes_df, k)
 
 # Plot the bias causes heatmap
-bias_causes_heatmap_trace = pu.get_bias_causes_heatmap_trace(bias_causes_pivot_df)
+bias_causes_pivot_df = bias_causes_pivot_df.sort_values(by = 'total', ascending=True)
+trace_config_dict = {
+    'x_val_name': 'Meas ID',
+    'y_val_name': 'Bias Cause',
+    'z_val_name': 'Diff from all ASes'
+}
+bias_causes_heatmap_trace = pu.get_bias_causes_heatmap_trace(bias_causes_pivot_df, trace_config_dict = trace_config_dict)
 bias_causes_heatmap_fig = pu.get_bias_causes_heatmap_fig(bias_causes_heatmap_trace)
 st.plotly_chart(bias_causes_heatmap_fig, use_container_width=True)
 

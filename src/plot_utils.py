@@ -14,6 +14,8 @@ def get_bar_trace(x_vals, y_vals, trace_config_dict={}):
     marker_color = trace_config_dict.get('marker_color', PLOTLY_DEFAULT_COLORS[0])
     orientation = trace_config_dict.get('orientation', None)
     name = trace_config_dict.get('name', None)
+    x_val_name = trace_config_dict.get('x_val_name', 'x')
+    y_val_name = trace_config_dict.get('y_val_name', 'y')
     # Create bar trace
     bar_trace = go.Bar(
         x=x_vals,
@@ -21,7 +23,9 @@ def get_bar_trace(x_vals, y_vals, trace_config_dict={}):
         showlegend=showlegend,
         marker_color=marker_color,
         orientation=orientation,
-        name=name
+        name=name,
+        # text = [f'x_val: {x}<br>y_val: {y}' for x, y in zip(x_vals, y_vals)],
+        hovertemplate= f"{y_val_name}: " + "%{y}  <br>" + f"{x_val_name}: " + "%{x}"
     )
 
     return bar_trace
@@ -73,6 +77,7 @@ def get_probes_asns_counts_traces(probes_df, asns_df, top_x_lines=100, normalize
 
 def get_probes_asns_bar_trace(dfp, col, normalize_option, show_lines):
     normalize = False if normalize_option == "Counts" else True
+    data_type = "count" if normalize_option == "Counts" else "frequency"
     if normalize:
         count_data_type = 'frequencies'
     else:
@@ -85,7 +90,9 @@ def get_probes_asns_bar_trace(dfp, col, normalize_option, show_lines):
     x_vals = bar_data.iloc[:show_lines, 0].values
     y_vals = bar_data.iloc[:show_lines, 1].values
     trace_config_dict = {
-        'orientation': 'h'
+        'orientation': 'h',
+        'x_val_name': data_type,
+        'y_val_name': col
     }
     bar_trace = get_bar_trace(y_vals, x_vals, trace_config_dict=trace_config_dict)
     bar_trace_dict = {
@@ -104,13 +111,16 @@ def get_bar_fig(bar_trace, fig_config_dict = {}):
         height=fig_config_dict.get("height", 500),
         title=bar_trace['title'],
         xaxis_title=fig_config_dict.get("x_axis_title", ""),
+        yaxis_title=fig_config_dict.get("y_axis_title", ""),
+        yaxis=dict(autorange="reversed"),
         # yaxis_title="Average Bias",
     )
 
     fig.update_yaxes(
-        visible = False,
+        visible = True,
+        showticklabels = False,
         type = 'category'
-)
+    )
 
     return fig
 
@@ -183,12 +193,15 @@ def get_num_probes_asns_per_meas_traces(df):
     }
     x_vals = df['num_probes'].values
     y_vals = list(df.index.astype(str))
+    trace_config_dict['x_val_name'] = 'number of probes'
+    trace_config_dict['y_val_name'] = 'measurement ID'
     num_probes_per_meas_trace = get_bar_trace(x_vals, y_vals, trace_config_dict = trace_config_dict)
     num_probes_per_meas_trace_dict = {
         'trace': num_probes_per_meas_trace,
         'title': 'Number of probes per measurement'
     }
     x_vals = df['num_asns'].values
+    trace_config_dict['x_val_name'] = 'number of ASes'
     num_asns_per_meas_trace = get_bar_trace(x_vals, y_vals, trace_config_dict = trace_config_dict)
     num_asns_per_meas_trace_dict = {
         'trace': num_asns_per_meas_trace,
@@ -216,6 +229,7 @@ def get_num_probes_asns_per_meas_fig(num_probes_asns_per_meas_traces):
     fig.update_yaxes(type='category', row=1, col=2)
 
     fig.update_layout(
+        yaxis_title = "Measurement ID",
         width = 1000,
         height = 700
     )
@@ -261,7 +275,7 @@ def get_average_bias_per_sample_fig(average_bias_per_sample_trace):
 
     fig.update_layout(
         title="Average Bias per sample",
-        xaxis_title="Sample",
+        # xaxis_title="Sample",
         yaxis_title="Average Bias",
         height=500,
         width=400
@@ -308,6 +322,17 @@ def get_avg_bias_per_dim_radar_fig(radar_traces):
     ))
 
     return fig
+
+
+def get_all_bias_per_dim_figs(avg_bias_per_dim_radar_traces, meas_bias_per_dim_radar_traces):
+    # Create dictionary that will contain all the possible figures
+    bias_per_dim_fig_dict = dict()
+    # Figure containing only all measurements together + random sample
+    bias_per_dim_fig_dict['No measurement'] = get_avg_bias_per_dim_radar_fig(avg_bias_per_dim_radar_traces)
+    # For each individual measurement create the figure of all measurements together + random sample + measurement
+    for meas_radar_trace in meas_bias_per_dim_radar_traces:
+        bias_per_dim_fig_dict[meas_radar_trace['name']] = get_avg_bias_per_dim_radar_fig(avg_bias_per_dim_radar_traces + [meas_radar_trace])
+    return bias_per_dim_fig_dict
 
 
 def get_avg_bias_per_dim_bar_traces(avg_bias_per_dim_data):
@@ -367,15 +392,23 @@ def get_avg_bias_per_dim_bar_fig(bar_traces):
     return fig
 
 
-def get_scatter_trace(scatter_data, x_col, y_col):
+def get_scatter_trace(scatter_data, x_col, y_col, trace_config_dict = {}):
+    y_val_name = trace_config_dict.get('y_val_name', 'y')
+    x_val_name = trace_config_dict.get('x_val_name', 'x')
+    label = scatter_data.get('label', '')
     scatter_trace = go.Scatter(
         x = scatter_data[x_col],
         y = scatter_data[y_col],
-        text = scatter_data['hovertext'],
+        text = label,
+        hovertemplate = "%{text}" + f"<br>{y_val_name}: " + "%{y}  <br>" + f"{x_val_name}: " + "%{x}",
         mode='markers',
         marker=dict(
-            size=40
-        ),
+            size=40,
+            line=dict(
+                color='DarkSlateGrey',
+                width=3
+            )
+        )
     )
     return scatter_trace
 
@@ -483,15 +516,19 @@ def df_to_plotly(df):
             'y': df.index.tolist()}
 
 
-def get_bias_causes_heatmap_trace(bias_causes_pivot):
+def get_bias_causes_heatmap_trace(bias_causes_pivot, trace_config_dict = {}):
+    x_val_name = trace_config_dict.get('x_val_name', 'x')
+    y_val_name = trace_config_dict.get('y_val_name', 'x')
+    z_val_name = trace_config_dict.get('z_val_name', 'x')
     zmax = max(abs(bias_causes_pivot.min().min()), bias_causes_pivot.max().max())
     trace = go.Heatmap(
-            df_to_plotly(bias_causes_pivot),
-            colorbar={"title": "Difference from <br> all ASes (%)"},
-            colorscale='Picnic',
-            # reversescale=True,
-            zmax = zmax,
-            zmin = -zmax
+        df_to_plotly(bias_causes_pivot),
+        colorbar={"title": "Difference from <br> all ASes (%)"},
+        colorscale='Picnic',
+        # reversescale=True,
+        zmax = zmax,
+        zmin = -zmax,
+        hovertemplate = f"{x_val_name}: " + "%{x} <br>" + f"{y_val_name}: " + "%{y}  <br>" + f"{z_val_name}: " + "%{z}%",
     )
     return trace
 
@@ -503,7 +540,7 @@ def get_bias_causes_heatmap_fig(bias_causes_trace):
         xaxis_showgrid = True,
         yaxis_showgrid = False,
         xaxis=dict(type='category'),
-        xaxis_title = 'Sample',
+        xaxis_title = 'Measurement ID',
         yaxis_title = 'Bias Dimensions:Bin',
         title_text="Bias causes for each measurement and all measurements",
         width = 1000,

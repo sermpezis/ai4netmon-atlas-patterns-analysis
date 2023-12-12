@@ -229,5 +229,4 @@ def bias_causes_main(input_meas_ids, asns_df, k = 5):
     # Get top k positive and negative bias causes for each measurement as well as for all measurements
     bias_causes_pivot_df = get_dashboard_bias_causes_data(input_meas_ids, bias_causes_df, k)
 
-
     return bias_causes_df, bias_causes_pivot_df

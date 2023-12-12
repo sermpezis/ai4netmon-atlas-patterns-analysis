@@ -16,7 +16,7 @@ def prepare_probeid_asn_counts_data(df, col, normalize):
     # Convert probe_id or asn column to string
     df[col] = df[col].astype(str)
     # Get the number each probe id or asn appears
-    bar_plot_data_df = df[col].value_counts(normalize=normalize).sort_values(ascending=True).reset_index()
+    bar_plot_data_df = df[col].value_counts(normalize=normalize).sort_values(ascending=False).reset_index()
     return bar_plot_data_df
 
 
@@ -109,9 +109,23 @@ def get_bias_analysis_data(df):
     return avg_bias_per_dim_data, avg_bias_data
 
 
+def get_meas_bias_per_dim_data(df):
+    """
+    Creates a dictionary similar to the one returned by get_bias_analysis_data() but containing data for each input
+    measurement.
+    """
+    meas_bias_per_dim_dict = {str(meas_id): dict() for meas_id in list(df.index)}
+    tmp = df[BIAS_DIMENSIONS].to_dict(orient = 'index')
+    for meas_id in tmp.keys():
+        meas_data = tmp[meas_id]
+        meas_bias_per_dim_dict[str(meas_id)]['data'] = pd.Series(meas_data)
+        meas_bias_per_dim_dict[str(meas_id)]['color'] = PLOTLY_DEFAULT_COLORS[2]
+    return meas_bias_per_dim_dict
+
+
 def get_num_probes_avg_bias_meas_scatter_df(df):
     scatter_data = pd.concat([df['num_probes'], df[BIAS_DIMENSIONS].mean(axis = 1)], axis = 1).rename(columns = {0: 'avg_meas_bias'}).sort_values(by = 'num_probes').reset_index()
-    scatter_data['hovertext'] = 'Meas ID: ' + scatter_data['meas_id'].astype(str)
+    scatter_data['label'] = 'Meas ID: ' + scatter_data['meas_id'].astype(str)
     return scatter_data
 
 
