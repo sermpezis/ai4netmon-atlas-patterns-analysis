@@ -12,7 +12,7 @@ KEEP_FIELDS = [
 ]
 
 # Name of the file where the data for all probes are saved
-PROBES_DATA_CSV_NAME = '../data/probes_data.csv'
+PROBES_DATA_CSV_NAME = './data/probes_data.csv'
 
 # Bias dimensions
 BIAS_DIMENSIONS = [
